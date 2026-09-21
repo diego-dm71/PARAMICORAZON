@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1a1836">
+<meta name="robots" content="noindex, nofollow">
+<title>Para ti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Fraunces:ital,wght@1,600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --noche:#1a1836;
+    --noche-alta:#3a2c66;
+    --amarillo:#ffd23f;
+    --papel:#fff9ee;
+    --tinta:#3b2f45;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--noche)}
+  body{
+    background:radial-gradient(ellipse at 50% 28%, var(--noche-alta) 0%, var(--noche) 58%, #0f1026 100%);
+    font-family:"Caveat","Segoe Print","Bradley Hand",cursive;
+    color:var(--tinta);
+  }
+
+  /* ---------- Escenas (cada pantalla) ---------- */
+  .escena{
+    position:fixed;inset:0;z-index:2;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
+    opacity:0;visibility:hidden;
+    transition:opacity .9s ease, visibility 0s .9s;
+  }
+  .escena.activa{opacity:1;visibility:visible;transition:opacity .9s ease}
+
+  /* ---------- Botón ---------- */
+  .boton{
+    font:700 28px/1 "Caveat","Segoe Print",cursive;
+    color:var(--noche);background:var(--amarillo);
+    border:0;border-radius:999px;padding:15px 34px;min-height:54px;cursor:pointer;
+    box-shadow:0 10px 26px rgba(0,0,0,.35), 0 0 30px rgba(255,210,63,.25);
+    transition:transform .15s, opacity .4s;
+  }
+  .boton:active{transform:scale(.96)}
+  .boton:focus-visible{outline:3px solid #fff;outline-offset:4px}
+  .boton.oculto{opacity:0;pointer-events:none}
+
+  /* ---------- Escena 1: el sobre ---------- */
+  .sobre{
+    position:relative;width:min(80vw,340px);aspect-ratio:3/2;
+    filter:drop-shadow(0 20px 28px rgba(0,0,0,.5));
+  }
+  .sobre-fondo{position:absolute;inset:0;background:#e08f9d;border-radius:6px}
+  .sobre-carta{
+    position:absolute;left:7%;right:7%;top:6%;bottom:8%;
+    background:var(--papel);border-radius:3px;z-index:1;
+    transition:transform 1.1s cubic-bezier(.3,.9,.3,1) .55s;
+  }
+  .pliegue{position:absolute;inset:0;z-index:2}
+  .pliegue-i{background:#f1b0ba;clip-path:polygon(0 0,50% 56%,0 100%)}
+  .pliegue-d{background:#f1b0ba;clip-path:polygon(100% 0,50% 56%,100% 100%)}
+  .pliegue-b{background:#f8c9d0;clip-path:polygon(0 100%,50% 56%,100% 100%)}
+  .sobre-solapa{
+    position:absolute;left:0;right:0;top:0;height:56%;z-index:3;
+    background:#e89aa7;clip-path:polygon(0 0,100% 0,50% 100%);
+    transform-origin:top center;
+    transform:perspective(900px) rotateX(0deg);
+    transition:transform .8s cubic-bezier(.5,0,.2,1), z-index 0s .4s;
+  }
+  .sello{
+    position:absolute;left:50%;top:56%;width:46px;height:46px;margin:-23px 0 0 -23px;
+    border-radius:50%;background:var(--amarillo);display:grid;place-items:center;z-index:4;
+    box-shadow:0 3px 8px rgba(0,0,0,.3);transition:opacity .3s, transform .3s;
+  }
+  .sello svg{width:24px;height:24px}
+  .sobre.abierto .sobre-solapa{transform:perspective(900px) rotateX(180deg);z-index:0}
+  .sobre.abierto .sobre-carta{transform:translateY(-62%)}
+  .sobre.abierto .sello{opacity:0;transform:scale(.4)}
+
+  /* ---------- Escena 2: la carta ---------- */
+  .carta-caja{
+    position:relative;width:min(88vw,460px);border-radius:4px;
+    box-shadow:0 24px 50px rgba(0,0,0,.5);transform:rotate(-.5deg);
+  }
+  .carta-caja::after{           /* degradado abajo: avisa que la carta sigue */
+    content:"";position:absolute;left:0;right:0;bottom:0;height:64px;border-radius:0 0 4px 4px;
+    background:linear-gradient(to top,var(--papel) 15%,rgba(255,249,238,0));
+    pointer-events:none;opacity:0;transition:opacity .3s;
+  }
+  .carta-caja.hay-mas::after{opacity:1}
+  .carta{
+    max-height:64vh;overflow-y:auto;overscroll-behavior:contain;
+    background-color:var(--papel);
+    background-image:repeating-linear-gradient(to bottom,transparent 0 31px,rgba(200,150,150,.28) 31px 32px);
+    background-attachment:local;background-position:0 28px;
+    border-radius:4px;padding:28px 24px;
+    font-weight:500;font-size:25px;line-height:32px;color:var(--tinta);
+  }
+  @supports (height:1dvh){ .carta{max-height:64dvh} }
+  .carta p{margin:0 0 32px}
+  .carta .firma{text-align:right;margin:0;font-weight:700}
+  .escena.activa .carta-caja{animation:carta .9s cubic-bezier(.2,.8,.3,1) both}
+  .boton-tardio{opacity:0;pointer-events:none}
+  .boton-tardio.listo{opacity:1;pointer-events:auto;animation:aparece .9s ease both}
+  @keyframes carta{
+    from{opacity:0;transform:translateY(30px) rotate(-.5deg) scale(.96)}
+    to{opacity:1;transform:translateY(0) rotate(-.5deg) scale(1)}
+  }
+  @keyframes aparece{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
+
+  /* ---------- Escena 3: el ramo, integrado a la noche ---------- */
+  #escena-ramo{display:block;padding:0}
+
+  /* Luz cálida que sale del ramo y se mezcla con el fondo */
+  .luz{
+    position:absolute;left:-30vw;right:-30vw;bottom:-14vh;height:84vh;
+    background:radial-gradient(ellipse 50% 50% at 50% 52%, rgba(255,206,64,.42), rgba(255,170,40,.16) 45%, rgba(255,170,40,0) 72%);
+    opacity:0;transform-origin:50% 60%;pointer-events:none;
+  }
+  @supports (height:1dvh){ .luz{bottom:-14dvh;height:84dvh} }
+  .escena.activa .luz{animation:luz 3s ease 1.2s forwards, respirar 7s ease-in-out 4.2s infinite}
+  @keyframes luz{to{opacity:1}}
+  @keyframes respirar{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.07);opacity:.8}}
+
+  /* El ramo sale desde abajo de la pantalla, cortado por el borde */
+  .ramo-caja{
+    position:absolute;left:50%;bottom:-5vh;transform:translateX(-50%);
+    height:min(60vh,620px);aspect-ratio:400/560;z-index:2;
+  }
+  @supports (height:1dvh){ .ramo-caja{bottom:-5dvh;height:min(60dvh,620px)} }
+  #ramo{display:block;width:100%;height:100%;overflow:visible;transform-origin:50% 100%}
+  .escena.activa #ramo{animation:balanceo 7s ease-in-out 4.2s infinite}
+  @keyframes balanceo{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1.2deg)}}
+
+  /* El pie del ramo se funde con la oscuridad */
+  .suelo{
+    position:absolute;left:0;right:0;bottom:0;height:12vh;z-index:3;pointer-events:none;
+    background:linear-gradient(to top, rgba(12,12,32,.92), rgba(12,12,32,0));
+  }
+  @supports (height:1dvh){ .suelo{height:12dvh} }
+
+  .para-ti{
+    position:absolute;left:0;right:0;top:max(5vh,calc(env(safe-area-inset-top) + 14px));
+    margin:0;text-align:center;z-index:3;
+    font:italic 600 clamp(48px,14vw,84px)/1 "Fraunces",Georgia,serif;
+    color:var(--amarillo);text-shadow:0 0 28px rgba(255,210,63,.45);
+    opacity:0;
+  }
+  @supports (height:1dvh){ .para-ti{top:max(5dvh,calc(env(safe-area-inset-top) + 14px))} }
+  .escena.activa .para-ti{animation:titulo 1.4s ease-out 2.8s forwards}
+  @keyframes titulo{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+
+  /* Animaciones del ramo (solo arrancan cuando la escena está activa) */
+  .tallo{stroke-dasharray:1 1;stroke-dashoffset:1;opacity:0}
+  .escena.activa .tallo{animation:crecer 1s ease-out forwards;animation-delay:var(--d)}
+  @keyframes crecer{0%{stroke-dashoffset:1;opacity:0}6%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+
+  .rama{transform-box:view-box;transform-origin:200px 392px;transform:scale(0)}
+  .escena.activa .rama{animation:rama 1s cubic-bezier(.2,.9,.3,1.1) forwards;animation-delay:var(--d)}
+  @keyframes rama{to{transform:scale(1)}}
+
+  .hoja{transform-box:fill-box;transform-origin:0% 50%;transform:scale(0)}
+  .escena.activa .hoja{animation:rama .7s cubic-bezier(.2,.9,.3,1.15) forwards;animation-delay:var(--d)}
+
+  .flor{transform-box:fill-box;transform-origin:center;transform:scale(0)}
+  .escena.activa .flor{animation:florecer 1.1s cubic-bezier(.2,.8,.3,1) forwards;animation-delay:var(--d)}
+  @keyframes florecer{
+    0%{transform:scale(0) rotate(-100deg)}
+    60%{transform:scale(1.06) rotate(6deg)}
+    100%{transform:scale(1) rotate(0deg)}
+  }
+  .anillo,.disco{transform-box:fill-box;transform-origin:center;transform:scale(.15)}
+  .escena.activa .anillo.a{animation:abrir .9s cubic-bezier(.2,.9,.3,1.15) forwards;animation-delay:calc(var(--d) + .05s)}
+  .escena.activa .anillo.b{animation:abrir .9s cubic-bezier(.2,.9,.3,1.15) forwards;animation-delay:calc(var(--d) + .3s)}
+  .escena.activa .disco{animation:abrir .8s cubic-bezier(.2,.9,.3,1.15) forwards;animation-delay:calc(var(--d) + .2s)}
+  @keyframes abrir{to{transform:scale(1)}}
+
+  .envoltorio{transform-box:fill-box;transform-origin:50% 100%;opacity:0}
+  .escena.activa .envoltorio{animation:envoltorio .8s cubic-bezier(.2,.9,.3,1) forwards;animation-delay:var(--d,0s)}
+  @keyframes envoltorio{
+    from{opacity:0;transform:translateY(40px) scale(.6)}
+    to{opacity:1;transform:translateY(0) scale(1)}
+  }
+  .cinta{transform-box:fill-box;transform-origin:center;transform:scale(0)}
+  .escena.activa .cinta{animation:abrir .7s cubic-bezier(.2,.9,.3,1.3) 1.9s forwards}
+
+  /* ---------- Lluvia de flores (canvas) ---------- */
+  .lluvia{
+    position:fixed;inset:0;width:100%;height:100%;pointer-events:none;
+    opacity:0;transition:opacity 1.4s ease;
+  }
+  body.final .lluvia{opacity:1}
+  #lluvia-atras{z-index:1}
+  #lluvia-frente{z-index:6}
+
+  /* ---------- Fotos saltando ---------- */
+  #fotos{position:fixed;inset:0;pointer-events:none;z-index:4;overflow:hidden}
+  .foto{position:absolute;--rot:0deg;animation:entrar .8s cubic-bezier(.34,1.56,.64,1) both}
+  .foto.salir{animation:salir .55s ease-in forwards}
+  .marco{
+    background:#fffdf7;padding:6px 6px 24px;border-radius:3px;
+    box-shadow:0 10px 22px rgba(0,0,0,.45);
+    animation:saltar 1.9s ease-in-out infinite;animation-delay:var(--delay,0s);
+  }
+  .marco img,.marco .relleno{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:1px}
+  .relleno{display:grid;place-items:center}
+  .relleno svg{width:38%;height:auto}
+
+  /* Frases que aparecen entre las fotos */
+  .pieza{
+    width:clamp(130px,40vw,190px);text-align:center;color:var(--tinta);
+    animation:saltar 1.9s ease-in-out infinite;animation-delay:var(--delay,0s);
+  }
+  .pieza span{display:block}
+  @media (max-width:600px){
+    .pieza{width:clamp(118px,34vw,170px)}
+    .nota{font-size:26px;padding:20px 12px 16px}
+    .tarjeta{font-size:20px;padding:12px 10px 14px}
+    .corazon{width:clamp(104px,30vw,130px)}
+    .corazon span{font-size:26px}
+  }
+  .nota{
+    position:relative;background:#ffe680;padding:24px 16px 20px;border-radius:2px;
+    box-shadow:0 10px 22px rgba(0,0,0,.4);
+    font:700 30px/1.05 "Caveat","Segoe Print",cursive;
+  }
+  .nota::before{
+    content:"";position:absolute;top:-9px;left:50%;width:64px;height:20px;margin-left:-32px;
+    background:rgba(255,255,255,.55);box-shadow:0 1px 3px rgba(0,0,0,.15);transform:rotate(-3deg);
+  }
+  .tarjeta{
+    background:var(--papel);border:3px solid #f4c6ce;border-radius:14px;padding:16px 14px 18px;
+    box-shadow:0 10px 22px rgba(0,0,0,.4);
+    font:italic 600 23px/1.15 "Fraunces",Georgia,serif;color:#b23a53;
+  }
+  .tarjeta svg{display:block;width:24px;height:22px;margin:0 auto 8px}
+  .corazon{
+    position:relative;width:clamp(112px,32vw,150px);aspect-ratio:1/.92;
+    filter:drop-shadow(0 10px 18px rgba(0,0,0,.4));
+  }
+  .corazon svg{position:absolute;inset:0;width:100%;height:100%}
+  .corazon span{
+    position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    padding:0 16% 8%;font:700 30px/1 "Caveat","Segoe Print",cursive;color:#fff;
+    text-shadow:0 1px 3px rgba(120,20,50,.55);
+  }
+  @keyframes entrar{
+    0%{opacity:0;transform:translateY(70px) scale(.2) rotate(calc(var(--rot) - 30deg))}
+    100%{opacity:1;transform:translateY(0) scale(1) rotate(var(--rot))}
+  }
+  @keyframes salir{
+    0%{opacity:1;transform:scale(1) rotate(var(--rot))}
+    100%{opacity:0;transform:translateY(-30px) scale(.6) rotate(calc(var(--rot) + 12deg))}
+  }
+  @keyframes saltar{
+    0%,100%{transform:translateY(0)}
+    18%{transform:translateY(-14px)}
+    34%{transform:translateY(0)}
+    44%{transform:translateY(-5px)}
+    54%{transform:translateY(0)}
+  }
+
+  /* ---------- Movimiento reducido ---------- */
+  @media (prefers-reduced-motion:reduce){
+    .marco,.pieza{animation:none}
+    .foto{animation:suave .4s both}
+    .foto.salir{animation:suave-fuera .3s forwards}
+    .escena.activa #ramo{animation:none}
+    .luz{opacity:1;animation:none!important}
+    .escena.activa .tallo,.escena.activa .hoja,.escena.activa .flor,.escena.activa .rama,
+    .escena.activa .anillo,.escena.activa .disco,.escena.activa .envoltorio,.escena.activa .cinta{
+      animation-duration:.01s;animation-delay:0s
+    }
+    @keyframes suave{from{opacity:0}to{opacity:1;transform:rotate(var(--rot))}}
+    @keyframes suave-fuera{from{opacity:1;transform:rotate(var(--rot))}to{opacity:0;transform:rotate(var(--rot))}}
+  }
+</style>
+</head>
+
+<body>
+
+<canvas id="lluvia-atras" class="lluvia" aria-hidden="true"></canvas>
+
+<!-- ============ ESCENA 1: EL SOBRE ============ -->
+<section class="escena activa" id="escena-sobre">
+  <div class="sobre" id="sobre">
+    <div class="sobre-fondo"></div>
+    <div class="sobre-carta"></div>
+    <div class="pliegue pliegue-i"></div>
+    <div class="pliegue pliegue-d"></div>
+    <div class="pliegue pliegue-b"></div>
+    <div class="sobre-solapa"></div>
+    <div class="sello">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#b23a53" d="M12 21C12 21 3 14.6 3 8.8 3 6.1 5 4.5 7.3 4.5c1.9 0 3.6 1.1 4.7 2.7 1.1-1.6 2.8-2.7 4.7-2.7C19 4.5 21 6.1 21 8.8 21 14.6 12 21 12 21z"/></svg>
+    </div>
+  </div>
+  <!-- Texto del primer botón: cámbialo aquí -->
+  <button class="boton" id="btn-abrir">Ábrelo con cariño</button>
+</section>
+
+<!-- ============ ESCENA 2: LA CARTA ============ -->
+<section class="escena" id="escena-carta">
+  <div class="carta-caja" id="carta-caja">
+    <article class="carta" id="carta">
+      <div id="carta-texto"></div>
+      <p class="firma" id="firma"></p>
+    </article>
+  </div>
+  <!-- Texto del segundo botón: cámbialo aquí -->
+  <button class="boton boton-tardio" id="btn-ramo">Tengo algo más para ti</button>
+</section>
+
+<!-- ============ ESCENA 3: EL RAMO ============ -->
+<section class="escena" id="escena-ramo">
+  <div class="luz"></div>
+
+  <div class="ramo-caja" id="ramo-caja">
+    <svg id="ramo" viewBox="0 0 400 560" role="img" aria-label="Un ramo de flores amarillas">
+      <defs>
+        <!-- pétalos -->
+        <radialGradient id="g-petalo-atras-1"><stop offset="0" stop-color="#a85a00"/><stop offset=".35" stop-color="#d98a00"/><stop offset=".75" stop-color="#f0ac10"/><stop offset="1" stop-color="#f8c94a"/></radialGradient>
+        <radialGradient id="g-petalo-atras-2"><stop offset="0" stop-color="#b06400"/><stop offset=".35" stop-color="#e29400"/><stop offset=".75" stop-color="#f5b820"/><stop offset="1" stop-color="#fad560"/></radialGradient>
+        <radialGradient id="g-petalo-1"><stop offset="0" stop-color="#c46f00"/><stop offset=".35" stop-color="#eca000"/><stop offset=".7" stop-color="#ffc91f"/><stop offset="1" stop-color="#ffe680"/></radialGradient>
+        <radialGradient id="g-petalo-2"><stop offset="0" stop-color="#cc7c00"/><stop offset=".35" stop-color="#f4ae06"/><stop offset=".7" stop-color="#ffd23f"/><stop offset="1" stop-color="#fff0a0"/></radialGradient>
+        <radialGradient id="g-petalo-3"><stop offset="0" stop-color="#bf6400"/><stop offset=".35" stop-color="#e99400"/><stop offset=".7" stop-color="#fbbf14"/><stop offset="1" stop-color="#ffdd66"/></radialGradient>
+        <!-- centro de la flor -->
+        <radialGradient id="g-disco" cx="45%" cy="40%" r="65%"><stop offset="0" stop-color="#7d4a10"/><stop offset=".6" stop-color="#4a2607"/><stop offset="1" stop-color="#2a1403"/></radialGradient>
+        <!-- sombra suave bajo cada flor -->
+        <radialGradient id="g-brillo" cx="35%" cy="30%" r="70%"><stop offset="0" stop-color="#ffffff" stop-opacity=".32"/><stop offset=".6" stop-color="#ffffff" stop-opacity=".06"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/></radialGradient>
+        <radialGradient id="g-sombra"><stop offset="0" stop-color="#1a0c00" stop-opacity=".55"/><stop offset=".6" stop-color="#1a0c00" stop-opacity=".3"/><stop offset="1" stop-color="#1a0c00" stop-opacity="0"/></radialGradient>
+        <!-- mimosa y eucalipto -->
+        <radialGradient id="g-pompon" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff4a8"/><stop offset=".55" stop-color="#ffd83a"/><stop offset="1" stop-color="#e6a400"/></radialGradient>
+        <radialGradient id="g-euca" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#cfe2c9"/><stop offset="1" stop-color="#8dac8a"/></radialGradient>
+        <!-- hojas: mitad clara, mitad oscura (efecto de pliegue) -->
+        <linearGradient id="g-hoja" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc45c"/><stop offset=".49" stop-color="#4b9a41"/><stop offset=".5" stop-color="#2f7434"/><stop offset="1" stop-color="#3c8a3a"/></linearGradient>
+        <!-- papel y cinta -->
+        <linearGradient id="g-kraft" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9b07c"/><stop offset="1" stop-color="#a5794a"/></linearGradient>
+        <linearGradient id="g-tisu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fdf0f1"/><stop offset="1" stop-color="#f2bcc6"/></linearGradient>
+        <linearGradient id="g-pliegue" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#5a2030" stop-opacity=".28"/><stop offset=".35" stop-color="#ffffff" stop-opacity=".18"/><stop offset=".65" stop-color="#ffffff" stop-opacity=".06"/><stop offset="1" stop-color="#5a2030" stop-opacity=".32"/></linearGradient>
+        <linearGradient id="g-cinta" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe680"/><stop offset=".5" stop-color="#f4b20a"/><stop offset="1" stop-color="#ffd23f"/></linearGradient>
+      </defs>
+
+      <!-- papel de atrás (kraft) -->
+      <g class="envoltorio" style="--d:0s">
+        <path d="M46 338 Q200 296 354 338 L236 552 Q200 562 164 552 Z" fill="url(#g-kraft)"/>
+      </g>
+
+      <g id="tallos"></g>
+      <g id="ramas"></g>
+      <g id="hojas"></g>
+      <g id="flores"></g>
+
+      <!-- papel de adelante (rosa suave) -->
+      <g class="envoltorio" style="--d:.25s">
+        <path d="M92 376 Q200 350 308 376 L228 554 Q200 561 172 554 Z" fill="url(#g-tisu)"/>
+        <path d="M92 376 Q200 350 308 376 L228 554 Q200 561 172 554 Z" fill="url(#g-pliegue)"/>
+        <path d="M132 372 Q168 470 186 553 M268 372 Q232 470 214 553" fill="none" stroke="#8a3a50" stroke-opacity=".22" stroke-width="1.5"/>
+        <path d="M92 376 Q200 350 308 376" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="2.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- cinta y moño -->
+      <g class="cinta">
+        <path d="M194 440 L154 514 L180 506 L188 530 L206 446 Z" fill="url(#g-cinta)"/>
+        <path d="M206 440 L246 514 L220 506 L212 530 L194 446 Z" fill="url(#g-cinta)"/>
+        <path d="M124 416 Q200 398 276 416 L270 436 Q200 418 130 436 Z" fill="url(#g-cinta)"/>
+        <path d="M200 428 C150 388 104 420 146 448 C168 458 190 442 200 432 Z" fill="url(#g-cinta)"/>
+        <path d="M200 428 C250 388 296 420 254 448 C232 458 210 442 200 432 Z" fill="url(#g-cinta)"/>
+        <path d="M200 430 C160 402 126 424 150 442" fill="none" stroke="#fff6c8" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>
+        <path d="M200 430 C240 402 274 424 250 442" fill="none" stroke="#fff6c8" stroke-opacity=".7" stroke-width="2" stroke-linecap="round"/>
+        <ellipse cx="200" cy="430" rx="12" ry="10" fill="#e8a000"/>
+        <ellipse cx="198" cy="428" rx="6" ry="4" fill="#ffe680" fill-opacity=".8"/>
+      </g>
+    </svg>
+  </div>
+
+  <div class="suelo"></div>
+
+  <!-- Texto que aparece sobre el ramo: cámbialo aquí -->
+  <h1 class="para-ti" id="para-ti">Para ti</h1>
+</section>
+
+<div id="fotos" aria-hidden="true"></div>
+<canvas id="lluvia-frente" class="lluvia" aria-hidden="true"></canvas>
+
+<script>
+/* =====================================================================
+   EDITA SOLO ESTA PARTE
+   ===================================================================== */
+
+// 1) El texto de la carta. Cada línea entre comillas es un párrafo.
+//    Ojo: todas las líneas terminan en coma, menos la última.
+const TEXTO_CARTA = [
+  "Querida Kiara,",
+  "Espero que te encuentres bien, tú y Abraham.",
+  "Quisiera pedirte que te tomes un momento para leer esto con calma. Sé que lo que dije te molestó. Lo dije por ti, nunca por tu familia, y no lo dije con mala intención. Me duele que te haya dolido, y no quiero que eso siga separándonos.",
+  "Con simples palabras no puedo demostrarte lo mucho que te amo, pero te amo intensamente desde el día en que nos conocimos. No se siente nada bien que me saques de tu vida por algo en lo que a mí también me hirieron sin yo tener idea.",
+  "Solo quisiera conversar contigo, y decirte todo lo que llevo dentro. Quiero ser quien esté a tu lado por siempre, aunque a veces me equivoque y te haga enojar.",
+  "Gracias por tu cariño y por hacer mis días más bonitos. No quiero que ni tu orgullo ni el mío me impidan seguir siendo parte de tu vida.",
+  "Te lo digo con todo mi corazón. Y ahora, tengo algo más para ti."
+];
+
+// 2) Tu nombre al final de la carta.
+const FIRMA = "Con todo mi amor, Diego";
+
+// 3) La canción (el archivo va en la misma carpeta que este index.html)
+//    y su volumen, de 0 (mudo) a 1 (máximo).
+const CANCION = "cancion.mp3";
+const VOLUMEN = 0.85;
+
+// 4) Cuántas fotos pusiste en la carpeta "fotos".
+//    Deben llamarse 1.jpg, 2.jpg, 3.jpg ... hasta este número.
+const CANTIDAD_FOTOS = 6;
+
+// 5) Frases que aparecen entre las fotos. Cambia, agrega o quita las que quieras.
+//    Las cortas (hasta 12 letras) a veces salen dentro de un corazón.
+//    Si dejas la lista vacía ( [] ) no sale ninguna.
+const FRASES = [
+  "Te amo",
+  "Tú y yo",
+  "Te quiero mucho",
+  "Eres mi persona favorita",
+  "Gracias por existir",
+  "Contigo todo es mejor",
+  "Te elijo hoy y siempre",
+  "Eres mi lugar favorito",
+  "Me haces muy feliz",
+  "Quiero seguir a tu lado",
+  "Eres lo mejor de mis días",
+  "Con todo mi corazón",
+  "Te amo, Kiara"
+];
+
+/* =====================================================================
+   DE AQUÍ PARA ABAJO ES EL MOTOR. No hace falta tocarlo.
+   ===================================================================== */
+
+const FOTOS = Array.from({ length: CANTIDAD_FOTOS }, (_, i) => `fotos/${i + 1}.jpg`);
+const $ = id => document.getElementById(id);
+const REDUCIR = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+const escenas = document.querySelectorAll(".escena");
+function mostrar(id){
+  escenas.forEach(e => e.classList.toggle("activa", e.id === id));
+}
+
+/* ---------- Carta ---------- */
+TEXTO_CARTA.forEach(texto => {
+  const p = document.createElement("p");
+  p.textContent = texto;
+  $("carta-texto").appendChild(p);
+});
+$("firma").textContent = FIRMA;
+
+/* ---------- El botón aparece cuando ella llega al final de la carta ---------- */
+const carta = $("carta"), cartaCaja = $("carta-caja"), btnRamo = $("btn-ramo");
+function revisarLectura(){
+  const sobra = carta.scrollHeight - carta.clientHeight;
+  const alFinal = sobra <= 6 || carta.scrollTop >= sobra - 8;
+  cartaCaja.classList.toggle("hay-mas", !alFinal);
+  if (alFinal) btnRamo.classList.add("listo");
+}
+carta.addEventListener("scroll", revisarLectura, { passive: true });
+
+/* ---------- Música: solo suena al abrir el ramo ---------- */
+const musica = new Audio(CANCION);
+musica.loop = true;
+musica.preload = "auto";
+musica.volume = 0;
+
+function sonar(){
+  const intento = musica.play();
+  if (intento && intento.catch) intento.catch(() => {});
+  let v = 0;
+  const subida = setInterval(() => {
+    v = Math.min(VOLUMEN, v + VOLUMEN / 30);
+    musica.volume = v;
+    if (v >= VOLUMEN) clearInterval(subida);
+  }, 100);
+}
+
+/* ---------- Botones ---------- */
+$("btn-abrir").addEventListener("click", () => {
+  $("btn-abrir").classList.add("oculto");
+  $("sobre").classList.add("abierto");
+  setTimeout(() => {
+    mostrar("escena-carta");
+    setTimeout(revisarLectura, 1500);
+    setTimeout(() => btnRamo.classList.add("listo"), 45000);   // por si acaso, aparece igual a los 45 s
+  }, 2300);
+}, { once: true });
+
+$("btn-ramo").addEventListener("click", () => {
+  sonar();                                   // el clic permite que el navegador deje sonar la canción
+  mostrar("escena-ramo");
+  document.body.classList.add("final");
+  setTimeout(iniciarLluvia, 2400);
+  setTimeout(empezarFotos, 3600);
+}, { once: true });
+
+
+/* =====================================================================
+   EL RAMO (dibujado con código, sin imágenes)
+   ===================================================================== */
+const NS = "http://www.w3.org/2000/svg";
+function el(tag, attrs, padre){
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (padre) padre.appendChild(e);
+  return e;
+}
+// Números "al azar" pero siempre iguales, para que el ramo se vea igual cada vez
+function rng(semilla){
+  return function(){
+    semilla |= 0; semilla = semilla + 0x6D2B79F5 | 0;
+    let t = Math.imul(semilla ^ semilla >>> 15, 1 | semilla);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+const R = rng(11);
+const azar = (a, b) => a + (b - a) * R();
+const elegir = lista => lista[Math.floor(R() * lista.length)];
+const f1 = n => n.toFixed(1);
+
+const gTallos = $("tallos"), gRamas = $("ramas"), gHojas = $("hojas"), gFlores = $("flores");
+const BASE = { x: 200, y: 392 };   // de aquí salen todos los tallos
+
+function curva(p0, p1, p2, t){
+  const u = 1 - t;
+  return { x: u*u*p0.x + 2*u*t*p1.x + t*t*p2.x, y: u*u*p0.y + 2*u*t*p1.y + t*t*p2.y };
+}
+function girar(x, y, a){
+  return [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+}
+
+/* --- Ramitas de relleno: mimosa (amarilla) y eucalipto (verde suave) --- */
+function ramita(tipo, x, y, d){
+  const p0 = { x: BASE.x + azar(-8, 8), y: BASE.y };
+  const p2 = { x, y };
+  const p1 = { x: (p0.x + x) / 2 + (x - 200) * 0.15, y: (p0.y + y) / 2 + 20 };
+  const g = el("g", { class: "rama", style: `--d:${d}s` }, gRamas);
+  el("path", {
+    d: `M${f1(p0.x)} ${p0.y}Q${f1(p1.x)} ${f1(p1.y)} ${x} ${y}`,
+    fill: "none", stroke: tipo === "mimosa" ? "#5f8f3a" : "#7c9c7a",
+    "stroke-width": 3, "stroke-linecap": "round"
+  }, g);
+  if (tipo === "mimosa"){
+    for (let i = 0; i < 9; i++){
+      const pt = curva(p0, p1, p2, 0.6 + i * 0.045);
+      const lado = i % 2 ? 1 : -1;
+      el("circle", { cx: f1(pt.x + lado * azar(4, 10)), cy: f1(pt.y + azar(-4, 4)), r: f1(azar(5, 8)), fill: "url(#g-pompon)" }, g);
+    }
+    el("circle", { cx: x, cy: y, r: 8.5, fill: "url(#g-pompon)" }, g);
+  } else {
+    for (let i = 0; i < 9; i++){
+      const pt = curva(p0, p1, p2, 0.42 + i * 0.065);
+      const lado = i % 2 ? 1 : -1;
+      const cx = pt.x + lado * 9, cy = pt.y - 2;
+      el("ellipse", { cx: f1(cx), cy: f1(cy), rx: 10, ry: 8.5, fill: "url(#g-euca)", transform: `rotate(${lado * 25} ${f1(cx)} ${f1(cy)})` }, g);
+    }
+    el("ellipse", { cx: x, cy: y, rx: 9.5, ry: 8, fill: "url(#g-euca)" }, g);
+  }
+}
+
+/* --- Hojas grandes --- */
+function hoja(x, y, rot, L, d){
+  const g = el("g", { transform: `translate(${x} ${y}) rotate(${rot})` }, gHojas);
+  const h = el("g", { class: "hoja", style: `--d:${d}s` }, g);
+  const w = L * 0.3;
+  el("path", { d: `M0 0C${f1(L*.2)} ${f1(-w)} ${f1(L*.7)} ${f1(-w*1.05)} ${L} 0C${f1(L*.7)} ${f1(w*1.05)} ${f1(L*.2)} ${f1(w)} 0 0Z`, fill: "url(#g-hoja)" }, h);
+  el("path", { d: `M0 0Q${f1(L*.5)} ${f1(-L*.02)} ${f1(L*.96)} 0`, fill: "none", stroke: "#b9e39d", "stroke-opacity": .55, "stroke-width": 1.6, "stroke-linecap": "round" }, h);
+  let v = "";
+  for (let k = 1; k <= 4; k++){
+    const t = k * 0.18;
+    v += `M${f1(L*t)} 0L${f1(L*(t+.14))} ${f1(-w*.62)}M${f1(L*t)} 0L${f1(L*(t+.14))} ${f1(w*.62)}`;
+  }
+  el("path", { d: v, fill: "none", stroke: "#1f5a25", "stroke-opacity": .3, "stroke-width": 1 }, h);
+}
+
+/* --- Flores tipo girasol / gerbera --- */
+function petalo(a, L, W, sesgo){
+  const P = (x, y) => { const [u, v] = girar(x, y, a); return `${f1(u)} ${f1(v)}`; };
+  return `M0 0C${P(-W*.9, -L*.25)} ${P(-W*.75 + sesgo, -L*.85)} ${P(sesgo, -L)}C${P(W*.75 + sesgo, -L*.85)} ${P(W*.9, -L*.25)} 0 0Z`;
+}
+function anilloDePetalos(n, L, W, desfase, jit){
+  let d = "", nervios = "";
+  for (let k = 0; k < n; k++){
+    const a = k * 2 * Math.PI / n + desfase + azar(-jit, jit);
+    const l = L * azar(.92, 1.06), w = W * azar(.9, 1.12), s = azar(-W * .25, W * .25);
+    d += petalo(a, l, w, s);
+    const [x1, y1] = girar(0, -l * .14, a), [x2, y2] = girar(s * .3, -l * .8, a);
+    nervios += `M${f1(x1)} ${f1(y1)}L${f1(x2)} ${f1(y2)}`;
+  }
+  return { d, nervios };
+}
+
+function flor(f, i){
+  const { x, y, r, rot, sy } = f;
+  const n = r > 30 ? 15 : 12;
+  const pos = el("g", { transform: `translate(${x} ${y}) rotate(${rot}) scale(1 ${sy})` }, gFlores);
+  const fl = el("g", { class: "flor", style: `--d:${1.15 + i * 0.13}s` }, pos);
+
+  el("circle", { cx: f1(r * .10), cy: f1(r * .16), r: f1(r * 1.1), fill: "url(#g-sombra)" }, fl);
+
+  const atras = anilloDePetalos(n, r, r * .19, 0, .09);
+  const ga = el("g", { class: "anillo a" }, fl);
+  el("path", { d: atras.d, fill: `url(#${elegir(["g-petalo-atras-1", "g-petalo-atras-2"])})` }, ga);
+
+  const delante = anilloDePetalos(n, r * .9, r * .18, Math.PI / n, .09);
+  const gb = el("g", { class: "anillo b" }, fl);
+  el("path", { d: delante.d, fill: `url(#${elegir(["g-petalo-1", "g-petalo-2", "g-petalo-3"])})` }, gb);
+  el("path", { d: delante.nervios, fill: "none", stroke: "#a55a00", "stroke-opacity": .38, "stroke-width": f1(Math.max(.7, r * .018)), "stroke-linecap": "round" }, gb);
+
+  el("ellipse", { cx: f1(-r * .16), cy: f1(-r * .2), rx: f1(r * .78), ry: f1(r * .62), fill: "url(#g-brillo)" }, gb);
+
+  const disco = el("g", { class: "disco" }, fl);
+  el("circle", { r: f1(r * .37), fill: "#b06a10" }, disco);
+  el("circle", { r: f1(r * .33), fill: "url(#g-disco)" }, disco);
+  const N = Math.round(20 + r * 1.1), c = r * .3 / Math.sqrt(N), rr = c * .42;
+  const pts = ["", "", ""];
+  for (let k = 1; k <= N; k++){
+    const a = k * 2.39996, rad = c * Math.sqrt(k);
+    const px = Math.cos(a) * rad, py = Math.sin(a) * rad;
+    pts[k % 3] += `M${f1(px - rr)} ${f1(py)}a${f1(rr)} ${f1(rr)} 0 1 0 ${f1(2*rr)} 0a${f1(rr)} ${f1(rr)} 0 1 0 ${f1(-2*rr)} 0Z`;
+  }
+  ["#9a6218", "#2a1402", "#c48a2c"].forEach((color, k) => el("path", { d: pts[k], fill: color, "fill-opacity": k === 2 ? .8 : 1 }, disco));
+}
+
+/* --- Armado: se dibuja de atrás hacia adelante --- */
+const FLORES = [
+  { x: 200, y: 112, r: 50, rot:   6, sy: .95 },
+  { x:  52, y: 150, r: 22, rot: -30, sy: .90 },
+  { x: 348, y: 150, r: 22, rot:  30, sy: .90 },
+  { x: 124, y: 158, r: 45, rot: -16, sy: .90 },
+  { x: 276, y: 158, r: 45, rot:  18, sy: .92 },
+  { x:  64, y: 226, r: 38, rot: -26, sy: .85 },
+  { x: 336, y: 226, r: 38, rot:  26, sy: .85 },
+  { x: 200, y: 196, r: 46, rot:   3, sy: 1   },
+  { x: 126, y: 250, r: 40, rot: -10, sy: .95 },
+  { x: 274, y: 250, r: 40, rot:  12, sy: .95 },
+  { x: 200, y: 272, r: 32, rot:   0, sy: .90 }
+];
+
+// tallos de las flores
+FLORES.forEach((f, i) => {
+  const bx = BASE.x + (f.x - 200) * .08 + azar(-4, 4);
+  const cx = (bx + f.x) / 2 + (f.x - 200) * .1, cy = (BASE.y + f.y) / 2 + 8;
+  const d = `M${f1(bx)} ${BASE.y}Q${f1(cx)} ${f1(cy)} ${f.x} ${f.y}`;
+  const delay = 0.45 + i * 0.08;
+  el("path", { d, pathLength: 1, class: "tallo", fill: "none", "stroke-width": 5.5, "stroke-linecap": "round", stroke: i % 2 ? "#3d7a34" : "#4a8a3c", style: `--d:${delay}s` }, gTallos);
+  el("path", { d, pathLength: 1, class: "tallo", fill: "none", "stroke-width": 1.6, "stroke-linecap": "round", stroke: "#9bd47a", "stroke-opacity": .5, transform: "translate(-1.2 0)", style: `--d:${delay}s` }, gTallos);
+});
+
+// relleno detrás de las flores
+[["mimosa", 150, 70], ["mimosa", 250, 74], ["mimosa", 96, 96], ["mimosa", 304, 100], ["mimosa", 28, 196], ["mimosa", 372, 196],
+ ["eucalipto", 34, 268], ["eucalipto", 366, 268], ["eucalipto", 78, 312], ["eucalipto", 322, 314]]
+  .forEach((r, i) => ramita(r[0], r[1], r[2], 0.8 + i * 0.07));
+
+// hojas grandes
+[[186, 352, -158, 96], [214, 352, -22, 96], [178, 330, -135, 78], [222, 330, -45, 78],
+ [190, 312, -118, 62], [210, 312, -62, 62], [170, 362, -172, 84], [230, 362, -8, 84]]
+  .forEach((h, i) => hoja(h[0], h[1], h[2], h[3], 1.0 + i * 0.07));
+
+// flores (de arriba hacia abajo: las de abajo tapan un poco a las de arriba)
+FLORES.forEach(flor);
+
+
+/* =====================================================================
+   LLUVIA DE FLORES AMARILLAS (canvas)
+   Tres profundidades: lejos (pequeñas), en medio, y cerca (grandes y desenfocadas)
+   ===================================================================== */
+const lienzoA = $("lluvia-atras"), lienzoF = $("lluvia-frente");
+let ctxA = null, ctxF = null, ancho = 0, alto = 0, dpr = 1;
+let SPRITES = null, particulas = [], ultimo = 0;
+
+function ajustarLienzos(){
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ancho = innerWidth; alto = innerHeight;
+  [lienzoA, lienzoF].forEach(c => { c.width = Math.round(ancho * dpr); c.height = Math.round(alto * dpr); });
+}
+window.addEventListener("resize", () => { if (ctxA) ajustarLienzos(); });
+
+function nuevoLienzo(w, h){
+  const c = document.createElement("canvas");
+  c.width = w; c.height = h;
+  return c;
+}
+const PALETAS = [
+  { base: "#c76f00", medio: "#f4ae00", punta: "#ffe27a" },
+  { base: "#d68a00", medio: "#ffc61a", punta: "#fff0a0" },
+  { base: "#b85c00", medio: "#f19a00", punta: "#ffd45c" }
+];
+function petaloAgudo(x, L, W){
+  x.beginPath(); x.moveTo(0, 0);
+  x.bezierCurveTo(-W*.9, -L*.25, -W*.75, -L*.85, 0, -L);
+  x.bezierCurveTo(W*.75, -L*.85, W*.9, -L*.25, 0, 0);
+  x.closePath();
+}
+function petaloRedondo(x, L, W){
+  x.beginPath(); x.moveTo(0, 0);
+  x.bezierCurveTo(-W*1.15, -L*.15, -W*1.2, -L*.98, 0, -L);
+  x.bezierCurveTo(W*1.2, -L*.98, W*1.15, -L*.15, 0, 0);
+  x.closePath();
+}
+function spriteFlor(tam, tipo, pal){
+  const c = nuevoLienzo(tam, tam), x = c.getContext("2d");
+  x.translate(tam / 2, tam / 2);
+  const r = tam * .4, girasol = tipo === "girasol";
+  const n = girasol ? 14 : 9;
+  [{ L: 1, off: 0 }, { L: .88, off: Math.PI / n }].forEach((anillo, k) => {
+    x.shadowColor = "rgba(40,20,0,.35)"; x.shadowBlur = tam * .04; x.shadowOffsetY = tam * .02;
+    for (let i = 0; i < n; i++){
+      x.save();
+      x.rotate(i * 2 * Math.PI / n + anillo.off + (Math.random() - .5) * .12);
+      const L = r * anillo.L * (.94 + Math.random() * .12);
+      const W = girasol ? r * .19 : r * .3;
+      (girasol ? petaloAgudo : petaloRedondo)(x, L, W);
+      const g = x.createLinearGradient(0, 0, 0, -L);
+      g.addColorStop(0, pal.base); g.addColorStop(.4, pal.medio); g.addColorStop(1, k ? pal.punta : pal.medio);
+      x.fillStyle = g; x.fill();
+      x.shadowColor = "transparent";
+      x.strokeStyle = "rgba(150,80,0,.32)"; x.lineWidth = Math.max(.8, tam * .008);
+      x.beginPath(); x.moveTo(0, -L * .14); x.lineTo(0, -L * .8); x.stroke();
+      x.restore();
+    }
+  });
+  x.shadowColor = "transparent";
+  const rd = r * (girasol ? .34 : .24);
+  const gd = x.createRadialGradient(-rd * .2, -rd * .2, 0, 0, 0, rd);
+  if (girasol){ gd.addColorStop(0, "#7d4a10"); gd.addColorStop(1, "#2a1403"); }
+  else { gd.addColorStop(0, "#f2a51c"); gd.addColorStop(1, "#b86400"); }
+  x.fillStyle = gd; x.beginPath(); x.arc(0, 0, rd, 0, Math.PI * 2); x.fill();
+  const N = girasol ? 48 : 22, cc = rd * .92 / Math.sqrt(N);
+  for (let k = 1; k <= N; k++){
+    const a = k * 2.39996, rad = cc * Math.sqrt(k);
+    x.fillStyle = girasol ? (k % 3 ? "#2a1402" : "#a06a1c") : (k % 2 ? "#8a4a00" : "#ffd35a");
+    x.beginPath(); x.arc(Math.cos(a) * rad, Math.sin(a) * rad, cc * .42, 0, Math.PI * 2); x.fill();
+  }
+  return c;
+}
+function spritePetalo(tam, pal){
+  const c = nuevoLienzo(tam, tam), x = c.getContext("2d");
+  x.translate(tam / 2, tam / 2);
+  const L = tam * .42, W = tam * .17;
+  x.beginPath(); x.moveTo(0, L);
+  x.bezierCurveTo(-W*1.3, L*.5, -W*1.4, -L*.6, W*.2, -L);
+  x.bezierCurveTo(W*1.7, -L*.5, W*1.3, L*.45, 0, L);
+  x.closePath();
+  const g = x.createLinearGradient(0, L, 0, -L);
+  g.addColorStop(0, pal.base); g.addColorStop(.45, pal.medio); g.addColorStop(1, pal.punta);
+  x.shadowColor = "rgba(40,20,0,.35)"; x.shadowBlur = tam * .04; x.shadowOffsetY = tam * .02;
+  x.fillStyle = g; x.fill();
+  x.shadowColor = "transparent";
+  x.strokeStyle = "rgba(150,80,0,.35)"; x.lineWidth = Math.max(.8, tam * .01);
+  x.beginPath(); x.moveTo(0, L * .8); x.quadraticCurveTo(-W * .1, 0, W * .15, -L * .8); x.stroke();
+  return c;
+}
+// Desenfoque: con filtro si el navegador lo permite; si no, se achica y se vuelve a agrandar
+function difuminada(src, px){
+  const pad = Math.ceil(px * 2.5);
+  const c = nuevoLienzo(src.width + pad * 2, src.height + pad * 2), x = c.getContext("2d");
+  if ("filter" in x){
+    x.filter = `blur(${px}px)`;
+    x.drawImage(src, pad, pad);
+    x.filter = "none";
+  } else {
+    const k = 8, s = nuevoLienzo(Math.ceil(c.width / k), Math.ceil(c.height / k)), sx = s.getContext("2d");
+    sx.drawImage(src, pad / k, pad / k, src.width / k, src.height / k);
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = "high";
+    x.drawImage(s, 0, 0, c.width, c.height);
+  }
+  return c;
+}
+function crearSprites(){
+  const claros = [], cerca = [];
+  PALETAS.forEach(pal => {
+    claros.push(spriteFlor(112, "girasol", pal), spriteFlor(112, "margarita", pal), spritePetalo(112, pal), spritePetalo(112, pal));
+    cerca.push(difuminada(spriteFlor(160, "girasol", pal), 6), difuminada(spriteFlor(160, "margarita", pal), 6));
+  });
+  SPRITES = { claros, cerca };
+}
+
+const CAPAS = [
+  { tam: [20, 32],  vel: [40, 70],    alfa: [.45, .7]  },   // lejos
+  { tam: [36, 62],  vel: [90, 150],   alfa: [.85, 1]   },   // en medio
+  { tam: [90, 140], vel: [150, 230],  alfa: [.65, .85] }    // cerca (desenfocadas)
+];
+function rango(a){ return a[0] + Math.random() * (a[1] - a[0]); }
+
+function nuevaParticula(capa, inicial){
+  const c = CAPAS[capa], tam = rango(c.tam);
+  const lista = capa === 2 ? SPRITES.cerca : SPRITES.claros;
+  return {
+    capa, tam,
+    sprite: lista[Math.floor(Math.random() * lista.length)],
+    x: Math.random() * ancho,
+    y: -tam - Math.random() * alto * (inicial ? .8 : .3),
+    vy: rango(c.vel), vx: (Math.random() - .5) * 14,
+    fase: Math.random() * 6.28, vfase: rango([.6, 1.6]), bal: rango([8, 26]) * (capa === 2 ? 1.6 : 1),
+    rot: Math.random() * 6.28, vrot: rango([-1.2, 1.2]),
+    giro: Math.random() * 6.28, vgiro: rango([.8, 2.6]),
+    alfa: rango(c.alfa)
+  };
+}
+function pintar(ctx, p){
+  const s = p.tam * (p.capa === 2 ? 1.15 : 1);
+  let sx = Math.cos(p.giro);
+  if (Math.abs(sx) < .14) sx = .14 * (sx < 0 ? -1 : 1);
+  ctx.save();
+  ctx.globalAlpha = p.alfa;
+  ctx.translate(p.x + Math.sin(p.fase) * p.bal, p.y);
+  ctx.rotate(p.rot);
+  ctx.scale(sx, 1);
+  ctx.drawImage(p.sprite, -s / 2, -s / 2, s, s);
+  ctx.restore();
+}
+function cuadro(t){
+  const dt = Math.min(.05, (t - ultimo) / 1000 || 0);
+  ultimo = t;
+  ctxA.setTransform(dpr, 0, 0, dpr, 0, 0); ctxA.clearRect(0, 0, ancho, alto);
+  ctxF.setTransform(dpr, 0, 0, dpr, 0, 0); ctxF.clearRect(0, 0, ancho, alto);
+  particulas.forEach(p => {
+    p.y += p.vy * dt; p.x += p.vx * dt;
+    p.fase += p.vfase * dt; p.rot += p.vrot * dt; p.giro += p.vgiro * dt;
+    if (p.y - p.tam > alto){
+      Object.assign(p, nuevaParticula(p.capa, false));
+    }
+    pintar(p.capa === 2 ? ctxF : ctxA, p);
+  });
+  requestAnimationFrame(cuadro);
+}
+function iniciarLluvia(){
+  ajustarLienzos();
+  ctxA = lienzoA.getContext("2d"); ctxF = lienzoF.getContext("2d");
+  if (!ctxA || !ctxF) return;
+  crearSprites();
+  const movil = ancho < 600;
+  const cantidad = movil ? [44, 56, 7] : [76, 96, 14];
+  cantidad.forEach((n, capa) => {
+    for (let i = 0; i < n; i++){
+      const p = nuevaParticula(capa, true);
+      if (REDUCIR) p.y = Math.random() * alto;   // sin movimiento: flores quietas repartidas
+      particulas.push(p);
+    }
+  });
+  if (REDUCIR){
+    ctxA.setTransform(dpr, 0, 0, dpr, 0, 0); ctxF.setTransform(dpr, 0, 0, dpr, 0, 0);
+    particulas.forEach(p => pintar(p.capa === 2 ? ctxF : ctxA, p));
+  } else {
+    requestAnimationFrame(cuadro);
+  }
+}
+
+
+/* =====================================================================
+   FOTOS QUE SALTAN
+   ===================================================================== */
+const capa = $("fotos");
+const COLORES = ["#f4c6ce", "#ffe08a", "#cdb4f0", "#a9d8c4", "#ffc9a3"];
+const CORAZON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M12 21C12 21 3 14.6 3 8.8 3 6.1 5 4.5 7.3 4.5c1.9 0 3.6 1.1 4.7 2.7 1.1-1.6 2.8-2.7 4.7-2.7C19 4.5 21 6.1 21 8.8 21 14.6 12 21 12 21z"/></svg>';
+
+let contador = 0, turno = 0;
+let ultimaFoto = null, ultimaFrase = null;
+const activas = new Set();   // lo que está en pantalla: { tipo, rect, src | frase }
+
+const CORAZON_ROJO = '<svg viewBox="2.5 4 19 17.5" aria-hidden="true"><path fill="#e8476a" d="M12 21C12 21 3 14.6 3 8.8 3 6.1 5 4.5 7.3 4.5c1.9 0 3.6 1.1 4.7 2.7 1.1-1.6 2.8-2.7 4.7-2.7C19 4.5 21 6.1 21 8.8 21 14.6 12 21 12 21z"/></svg>';
+
+// Elige algo que no esté ya en pantalla (y distinto al último que salió)
+function elegirLibre(lista, campo, ultima){
+  const usadas = new Set([...activas].map(a => a[campo]));
+  let libres = lista.filter(x => !usadas.has(x));
+  if (!libres.length) return undefined;                 // todo está en pantalla: se espera
+  if (libres.length > 1) libres = libres.filter(x => x !== ultima);
+  return libres[Math.floor(Math.random() * libres.length)];
+}
+function relleno(){
+  const d = document.createElement("div");
+  d.className = "relleno";
+  d.style.background = COLORES[contador++ % COLORES.length];
+  d.innerHTML = CORAZON;
+  return d;
+}
+function solape(a, b){
+  const w = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+  const h = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+  return (w > 0 && h > 0) ? w * h : 0;
+}
+function zonasProhibidas(){
+  const r = $("ramo-caja").getBoundingClientRect();
+  const t = $("para-ti").getBoundingClientRect();
+  return [
+    { left: r.left + r.width * .08, right: r.right - r.width * .08, top: r.top + r.height * .08, bottom: r.bottom },
+    t
+  ];
+}
+const retraso = () => "-" + (Math.random() * 1.8).toFixed(2) + "s";
+
+function construirFoto(){
+  let src = null;
+  if (FOTOS.length){
+    src = elegirLibre(FOTOS, "src", ultimaFoto);
+    if (src === undefined) return null;
+    ultimaFoto = src;
+  }
+  const foto = document.createElement("div");
+  foto.className = "foto";
+  foto.style.width = Math.max(90, Math.min(170, innerWidth * 0.25)) + "px";
+  const marco = document.createElement("div");
+  marco.className = "marco";
+  marco.style.setProperty("--delay", retraso());
+  if (src){
+    const img = document.createElement("img");
+    img.alt = "";
+    img.src = src;
+    img.onerror = () => img.replaceWith(relleno());
+    marco.appendChild(img);
+  } else {
+    marco.appendChild(relleno());
+  }
+  foto.appendChild(marco);
+  return { tipo: "foto", src, elemento: foto };
+}
+
+function construirFrase(){
+  const frase = elegirLibre(FRASES, "frase", ultimaFrase);
+  if (frase === undefined) return null;
+  ultimaFrase = frase;
+  const estilos = frase.length <= 12 ? ["corazon", "nota", "tarjeta"] : ["nota", "tarjeta"];
+  const estilo = estilos[Math.floor(Math.random() * estilos.length)];
+  const foto = document.createElement("div");
+  foto.className = "foto";
+  const caja = document.createElement("div");
+  caja.className = "pieza " + estilo;
+  caja.style.setProperty("--delay", retraso());
+  if (estilo === "corazon") caja.innerHTML = CORAZON_ROJO;
+  if (estilo === "tarjeta") caja.innerHTML = CORAZON_ROJO;
+  const texto = document.createElement("span");
+  texto.textContent = frase;
+  caja.appendChild(texto);
+  foto.appendChild(caja);
+  return { tipo: "frase", frase, elemento: foto };
+}
+
+function limites(){ return innerWidth < 600 ? { foto: 3, frase: 1 } : { foto: 6, frase: 3 }; }
+function cuantas(tipo){ let n = 0; activas.forEach(a => { if (a.tipo === tipo) n++; }); return n; }
+
+function lanzar(){
+  const lim = limites();
+  turno++;
+  // De cada 3 que salen, 1 es frase y 2 son fotos
+  let tipo = (FRASES.length && turno % 3 === 0) ? "frase" : "foto";
+  if (cuantas(tipo) >= lim[tipo]) tipo = tipo === "foto" ? "frase" : "foto";
+  if (tipo === "frase" && !FRASES.length) return;
+  if (cuantas(tipo) >= lim[tipo]) return;
+
+  const nuevo = tipo === "foto" ? construirFoto() : construirFrase();
+  if (!nuevo) return;
+
+  // Se pone invisible un instante para medir su tamaño real y buscarle lugar
+  const foto = nuevo.elemento;
+  foto.style.visibility = "hidden";
+  capa.appendChild(foto);
+  const w = foto.offsetWidth, h = foto.offsetHeight;
+
+  const zonas = zonasProhibidas();          // [ramo, título]
+  const peso = [3, 10];                     // tapar el título "cuesta" mucho más
+  let mejor = null, mejorScore = Infinity;
+  for (let i = 0; i < 30; i++){
+    const left = 6 + Math.random() * Math.max(1, innerWidth - w - 12);
+    const top  = 6 + Math.random() * Math.max(1, innerHeight - h - 12);
+    const rect = { left, top, right: left + w, bottom: top + h };
+    let score = 0;
+    zonas.forEach((z, k) => score += solape(rect, z) * peso[k]);
+    activas.forEach(a => score += solape(rect, a.rect) * 2);
+    if (score < mejorScore){ mejorScore = score; mejor = rect; }
+    if (score === 0) break;
+  }
+  foto.style.left = mejor.left + "px";
+  foto.style.top = mejor.top + "px";
+  foto.style.setProperty("--rot", (Math.random() * 20 - 10).toFixed(1) + "deg");
+  foto.style.visibility = "";
+
+  const item = { tipo, rect: mejor, src: nuevo.src, frase: nuevo.frase };
+  activas.add(item);
+  setTimeout(() => {
+    foto.classList.add("salir");
+    setTimeout(() => { foto.remove(); activas.delete(item); }, 600);
+  }, 4200 + Math.random() * 2200);
+}
+
+function empezarFotos(){
+  for (let i = 0; i < 4; i++) setTimeout(lanzar, i * 380);
+  setInterval(lanzar, 950);
+}
+</script>
+</body>
+</html>
